@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+
+<!--
+  * plugins/importexport/native/native.xsd
+  *
+  * Copyright (c) 2014-2020 Simon Fraser University
+  * Copyright (c) 2003-2020 John Willinsky
+  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+  *
+  * Schema describing native XML import/export elements specific to OJS
+  -->
+
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://pkp.sfu.ca" xmlns:pkp="http://pkp.sfu.ca" elementFormDefault="qualified">
+
+	<!--
+	  - Base the native import/export schema on the PKP submission model.
+	  -->
+	<!-- <include schemaLocation="./native_old.xsd" /> -->
+
+
+    <redefine schemaLocation="./native_old.xsd" >
+        <complexType name="articleInfo">
+            <complexContent>
+                <extension base="articleInfo">
+                    <sequence>
+                    	<element ref="pkp:participants"></element>
+                      <element ref="pkp:stages"></element>
+					          </sequence>
+                </extension>
+            </complexContent>
+        </complexType>
+    </redefine>
+
+  <element name="participants">
+		<complexType>
+			<sequence>
+				<element ref="pkp:participant" minOccurs="1" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+
+
+  <element name="participant">
+    <complexType>
+      <attribute name="mail" type="string"/>
+      <attribute name="user_group_ref" type="string"/>
+    </complexType>
+  </element>
+
+
+  <element name="stages">
+    <complexType>
+      <sequence>
+        <element ref="pkp:stage" minOccurs="5" maxOccurs="5" />
+      </sequence>
+    </complexType>
+  </element>
+
+
+  <element name="stage">
+    <complexType>
+      <sequence>
+        <element ref="pkp:queries" />
+      </sequence>
+      <attribute name="id" />
+      <attribute name="name" type="string" />
+    </complexType>
+  </element>
+  
+
+  <element name="queries">
+    <complexType>
+      <sequence>
+        <element ref="pkp:query" minOccurs="0" maxOccurs="unbounded" />
+      </sequence>
+    </complexType>
+  </element>
+
+
+  <element name="query">
+    <complexType>
+      <sequence>
+        <element ref="pkp:note" minOccurs="1" maxOccurs="unbounded" />
+      </sequence>
+    </complexType>
+  </element>
+
+  <element name="note">
+    <complexType mixed="true">
+      <attribute name="user" type="string"/>
+      <attribute name="date_created"/>
+      <attribute name="date_modified"/>
+    </complexType>
+  </element>
+	
+</schema>
