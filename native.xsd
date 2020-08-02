@@ -90,6 +90,7 @@
       <attribute name="user" type="string"/>
       <attribute name="date_created"/>
       <attribute name="date_modified"/>
+      <attribute name="title"/>
     </complexType>
   </element>
 	

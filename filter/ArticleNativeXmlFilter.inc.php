@@ -104,6 +104,9 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 				$noteNode->setAttribute('user', $userDao->getById($note->getUserId())->getEmail());
 				$noteNode->setAttribute('date_created', $note->getDateCreated());
 				$noteNode->setAttribute('date_modified', $note->getDateModified());
+				if($note->getTitle()){
+					$noteNode->setAttribute('title', $note->getTitle());
+				}
 				$queryNode->appendChild($noteNode);
 			}
 			$queriesNode->appendChild($queryNode);

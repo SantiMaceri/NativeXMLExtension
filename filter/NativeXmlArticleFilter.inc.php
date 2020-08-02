@@ -87,10 +87,14 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 			case 'artwork_file':
 			case 'supplementary_file':
 				$this->parseSubmissionFile($n, $submission);
-				break;
+			break;
 			case 'participants':
 				$this->parseParticipants($n, $submission);
-				break;
+				
+			break;
+			case 'stages':
+				$this->parseStages($n, $submission);
+			break;
 			default:
 				parent::handleChildElement($n, $submission);
 		}
@@ -158,10 +162,55 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 					break;
 				}
 			}
-
 			//Parece el indicado para crear stageAssigments
 			$stageAssignment = $stageAssignmentDao->build($submission->getId(), $ug->getId(), $user->getId());
 
+		}
+	}
+
+	function parseStages($n, $submission){
+		$deployment = $this->getDeployment();
+		$context = $deployment->getContext();
+	
+		$stages = $n->getElementsByTagName("stage");
+		$this->parseQueries($stages, $submission);
+		
+	}
+
+	function parseQueries($stages, $submission){
+
+		$queryDao = DAORegistry::getDAO('QueryDAO'); 
+		$noteDao = DAORegistry::getDAO('NoteDAO'); 
+		$userDao = DAORegistry::getDAO('UserDAO');
+		foreach($stages as $stage){
+			$queries = $stage->getElementsByTagName("queries")[0]->getElementsByTagName("query");
+			foreach($queries as $query){
+				//Create a query
+				$queryObj = $queryDao->newDataObject();
+				$queryObj->setAssocType(ASSOC_TYPE_SUBMISSION);
+				$queryObj->setAssocId($submission->getId());
+				$queryObj->setStageId($stage->getAttribute("id"));
+				$queryObj->setSequence(REALLY_BIG_NUMBER);
+				$queryDao->insertObject($queryObj);
+				$queryDao->resequence(ASSOC_TYPE_SUBMISSION, $submission->getId());
+
+				$notes = $query->getElementsByTagName("note");
+	
+				foreach($notes as $note){
+					if($note->getAttribute("title")){
+						
+					}
+					//Create note
+					$noteObj = $noteDao->newDataObject();
+					$noteObj->setAssocType(ASSOC_TYPE_QUERY);
+					$noteObj->setAssocId($queryObj->getId());
+					$noteObj->setUserId($userDao->getUserByEmail($note->getAttribute("user"))->getId());
+					$noteObj->setDateCreated(Core::getCurrentDate());
+					$noteObj->setContents($note->textContent);
+					$noteDao->insertObject($noteObj);
+
+				}
+			}
 		}
 	}
 }
