@@ -197,8 +197,11 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 				$notes = $query->getElementsByTagName("note");
 	
 				foreach($notes as $note){
-					if($note->getAttribute("title")){
-						
+					
+
+					//Insert participants
+					if (!in_array($userDao->getUserByEmail($note->getAttribute("user"))->getId(), $queryDao->getParticipantIds($queryObj->getId()))) {
+						$queryDao->insertParticipant($queryObj->getId(),$userDao->getUserByEmail($note->getAttribute("user"))->getId());
 					}
 					//Create note
 					$noteObj = $noteDao->newDataObject();
@@ -207,6 +210,9 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 					$noteObj->setUserId($userDao->getUserByEmail($note->getAttribute("user"))->getId());
 					$noteObj->setDateCreated(Core::getCurrentDate());
 					$noteObj->setContents($note->textContent);
+					if($note->getAttribute("title")){
+						$noteObj->setTitle($note->getAttribute("title"));
+					}
 					$noteDao->insertObject($noteObj);
 
 				}
