@@ -136,6 +136,11 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 			$stageNode->setAttribute('name', $value);
 
 			$stageNode->appendChild($this->createQueriesNode($doc, $deployment, $submission, $stageId));
+			
+
+			if($stageId == WORKFLOW_STAGE_ID_EXTERNAL_REVIEW){
+				$stageNode->appendChild($this->createRoundsNode($doc, $deployment, $submission));
+			}
 
 			$stagesNode->appendChild($stageNode);
 		}
@@ -144,5 +149,70 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 
 	}
 
+
+	function createRoundsNode($doc, $deployment, $submission){
+		$reviewRoundDao = DAORegistry::getDAO('ReviewRoundDAO');
+		$roundsNode = $doc->createElementNS($deployment->getNamespace(), 'rounds');
+
+		$rounds = $reviewRoundDao->getBySubmissionId($submission->getId(), WORKFLOW_STAGE_ID_EXTERNAL_REVIEW)->toArray();
+		foreach($rounds as $round){
+			$roundsNode->appendChild($this->createRoundNode($doc, $deployment, $submission, $round));
+		}
+
+		return $roundsNode;
+
+
+	}
+
+
+	function createRoundNode($doc, $deployment, $submission, $round){
+		$submissionFileDao = DAORegistry::getDAO('SubmissionFileDAO');
+
+		$roundNode = $doc->createElementNS($deployment->getNamespace(), 'round');
+		$files = $submissionFileDao->getRevisionsByReviewRound($round);
+
+		foreach($files as $submissionFile){
+			$roundNode->appendChild($this->createFileNode($doc,$deployment,$submission, $submissionFile));
+		}
+		
+		
+		
+		return $roundNode;
+	}
+
+	function createFileNode($doc, $deployment, $submission, $submissionFile){
+		$fileNode= $doc->createElementNS($deployment->getNamespace(), 'file');
+		$fileNode->setAttribute('number', $submissionFile->getRevision());
+		if ($sourceFileId = $submissionFile->getSourceFileId()) {
+			$fileNode->setAttribute('source', $sourceFileId . '-' . $submissionFile->getSourceRevision());
+		}
+
+		$genreDao = DAORegistry::getDAO('GenreDAO'); /* @var $genreDao GenreDAO */
+		$genre = $genreDao->getById($submissionFile->getGenreId());
+		if ($genre) {
+			$fileNode->setAttribute('genre', $genre->getName($deployment->getContext()->getPrimaryLocale()));
+		}
+		$fileNode->setAttribute('filename', $submissionFile->getOriginalFileName());
+		$fileNode->setAttribute('viewable', $submissionFile->getViewable()?'true':'false');
+		$fileNode->setAttribute('date_uploaded', strftime('%Y-%m-%d', strtotime($submissionFile->getDateUploaded())));
+		$fileNode->setAttribute('date_modified', strftime('%Y-%m-%d', strtotime($submissionFile->getDateModified())));
+		if ($submissionFile->getDirectSalesPrice() !== null) {
+			$fileNode->setAttribute('direct_sales_price', $submissionFile->getDirectSalesPrice());
+		}
+		$fileNode->setAttribute('filesize', $submissionFile->getFileSize());
+		$fileNode->setAttribute('filetype', $submissionFile->getFileType());
+
+		$userDao = DAORegistry::getDAO('UserDAO'); /* @var $userDao UserDAO */
+		$uploaderUser = $userDao->getById($submissionFile->getUploaderUserId());
+		assert(isset($uploaderUser));
+		$fileNode->setAttribute('uploader', $uploaderUser->getEmail());
+
+		$this->createLocalizedNodes($doc, $fileNode, 'name', $submissionFile->getName(null));
+
+		$embedNode = $doc->createElementNS($deployment->getNamespace(), 'embed', base64_encode(file_get_contents($submissionFile->getFilePath())));
+		$embedNode->setAttribute('encoding', 'base64');
+		$fileNode->appendChild($embedNode);
+		return $fileNode;
+	}
 
 }

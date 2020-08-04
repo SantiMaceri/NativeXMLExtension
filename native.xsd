@@ -61,12 +61,73 @@
     <complexType>
       <sequence>
         <element ref="pkp:queries" />
+        <element ref="pkp:rounds" minOccurs="0" maxOccurs="1" />
       </sequence>
       <attribute name="id" />
       <attribute name="name" type="string" />
     </complexType>
   </element>
   
+
+<!-- Rounds -->
+
+
+
+<element name="rounds">
+  <complexType>
+    <sequence>
+      <element ref="pkp:round" minOccurs="0" maxOccurs="unbounded" />
+    </sequence>
+  </complexType>
+</element>
+
+<element name="round"> 
+  <complexType>
+    <sequence>
+      <element ref="pkp:file" minOccurs="0" maxOccurs="unbounded" />
+    </sequence>
+  </complexType>
+</element>
+
+
+<element name="file">
+  <complexType>
+    <sequence>
+      <element ref="pkp:name"/> 
+      <element ref="pkp:embed" />
+    </sequence>
+
+    <attribute name="number" />
+    <attribute name="source" />
+    <attribute name="genre" />
+    <attribute name="filename" />
+    <attribute name="viewable" />
+    <attribute name="date_uploaded" />
+    <attribute name="date_modified" />
+    <attribute name="filesize" />
+    <attribute name="filetype" />
+    <attribute name="uploader" />
+
+    
+  </complexType>
+</element>
+
+
+<element name="name">
+  <complexType mixed="true">
+    <attribute name="locale" />
+  </complexType>
+</element>
+
+<element name="embed">
+  <complexType mixed="true">
+    <attribute name="encoding" />
+  </complexType>
+</element>
+
+
+
+<!-- Queries -->
 
   <element name="queries">
     <complexType>

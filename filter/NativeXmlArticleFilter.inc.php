@@ -173,50 +173,100 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 		$context = $deployment->getContext();
 	
 		$stages = $n->getElementsByTagName("stage");
-		$this->parseQueries($stages, $submission);
+
+		foreach($stages as $stage){
+			$queries = $stage->getElementsByTagName("queries")[0]->getElementsByTagName("query");
+			$this->parseQueries($queries, $submission, $stage->getAttribute("id") );
+			if($stage->getAttribute("id") == WORKFLOW_STAGE_ID_EXTERNAL_REVIEW ){
+				$rounds = $stage->getElementsByTagName("rounds")[0]->getElementsByTagName("round");
+				$this->parseRounds($rounds,$submission, $stage->getAttribute("id"));
+			}
+		}
+		
 		
 	}
 
-	function parseQueries($stages, $submission){
+	function parseQueries($queries, $submission, $stageId){
 
 		$queryDao = DAORegistry::getDAO('QueryDAO'); 
 		$noteDao = DAORegistry::getDAO('NoteDAO'); 
 		$userDao = DAORegistry::getDAO('UserDAO');
-		foreach($stages as $stage){
-			$queries = $stage->getElementsByTagName("queries")[0]->getElementsByTagName("query");
-			foreach($queries as $query){
-				//Create a query
-				$queryObj = $queryDao->newDataObject();
-				$queryObj->setAssocType(ASSOC_TYPE_SUBMISSION);
-				$queryObj->setAssocId($submission->getId());
-				$queryObj->setStageId($stage->getAttribute("id"));
-				$queryObj->setSequence(REALLY_BIG_NUMBER);
-				$queryDao->insertObject($queryObj);
-				$queryDao->resequence(ASSOC_TYPE_SUBMISSION, $submission->getId());
-
-				$notes = $query->getElementsByTagName("note");
 	
-				foreach($notes as $note){
-					
+		foreach($queries as $query){
+			//Create a query
+			$queryObj = $queryDao->newDataObject();
+			$queryObj->setAssocType(ASSOC_TYPE_SUBMISSION);
+			$queryObj->setAssocId($submission->getId());
+			$queryObj->setStageId($stageId);
+			$queryObj->setSequence(REALLY_BIG_NUMBER);
+			$queryDao->insertObject($queryObj);
+			$queryDao->resequence(ASSOC_TYPE_SUBMISSION, $submission->getId());
 
-					//Insert participants
-					if (!in_array($userDao->getUserByEmail($note->getAttribute("user"))->getId(), $queryDao->getParticipantIds($queryObj->getId()))) {
-						$queryDao->insertParticipant($queryObj->getId(),$userDao->getUserByEmail($note->getAttribute("user"))->getId());
-					}
-					//Create note
-					$noteObj = $noteDao->newDataObject();
-					$noteObj->setAssocType(ASSOC_TYPE_QUERY);
-					$noteObj->setAssocId($queryObj->getId());
-					$noteObj->setUserId($userDao->getUserByEmail($note->getAttribute("user"))->getId());
-					$noteObj->setDateCreated(Core::getCurrentDate());
-					$noteObj->setContents($note->textContent);
-					if($note->getAttribute("title")){
-						$noteObj->setTitle($note->getAttribute("title"));
-					}
-					$noteDao->insertObject($noteObj);
+			$notes = $query->getElementsByTagName("note");
 
+			foreach($notes as $note){
+
+				//Insert participants
+				if (!in_array($userDao->getUserByEmail($note->getAttribute("user"))->getId(), $queryDao->getParticipantIds($queryObj->getId()))) {
+					$queryDao->insertParticipant($queryObj->getId(),$userDao->getUserByEmail($note->getAttribute("user"))->getId());
 				}
+				//Create note
+				$noteObj = $noteDao->newDataObject();
+				$noteObj->setAssocType(ASSOC_TYPE_QUERY);
+				$noteObj->setAssocId($queryObj->getId());
+				$noteObj->setUserId($userDao->getUserByEmail($note->getAttribute("user"))->getId());
+				$noteObj->setDateCreated(Core::getCurrentDate());
+				$noteObj->setContents($note->textContent);
+				if($note->getAttribute("title")){
+					$noteObj->setTitle($note->getAttribute("title"));
+				}
+				$noteDao->insertObject($noteObj);
+
 			}
 		}
+	
+	}
+
+
+	function parseRounds($rounds,$submission, $stageId){
+		foreach($rounds as $round){
+			$this->parseRound($round, $submission, $stageId);
+		}
+	}
+
+	function parseRound($round , $submission, $stageId){
+		// If we already have review round for this stage,
+		// we create a new round after the last one.
+		$reviewRoundDao = DAORegistry::getDAO('ReviewRoundDAO'); /* @var $reviewRoundDao ReviewRoundDAO */
+		$lastReviewRound = $reviewRoundDao->getLastReviewRoundBySubmissionId($submission->getId(), $stageId);
+		if ($lastReviewRound) {
+			$newRound = $lastReviewRound->getRound() + 1;
+		} else {
+			// If we don't have any review round, we create the first one.
+			$newRound = 1;
+		}
+
+		// Create a new review round.
+		$reviewRound = $reviewRoundDao->build($submission->getId(), $stageId, $newRound, null);
+
+		// Add the selected files to the new round.
+		$submissionFileDao = DAORegistry::getDAO('SubmissionFileDAO'); /* @var $submissionFileDao SubmissionFileDAO */
+
+		// Bring in the SUBMISSION_FILE_* constants.
+		import('lib.pkp.classes.submission.SubmissionFile');
+		// Bring in the Manager (we need it).
+		import('lib.pkp.classes.file.SubmissionFileManager');
+		$submissionFileManager = new SubmissionFileManager($submission->getContextId(), $submission->getId());
+		// foreach (array('selectedFiles', 'selectedAttachments') as $userVar) {
+		// 	$selectedFiles = $this->getData($userVar);
+		// 	if(is_array($selectedFiles)) {
+		// 		foreach ($selectedFiles as $fileId) {
+			// 			Retrieve the file last revision number.
+		// 			$revisionNumber = $submissionFileDao->getLatestRevisionNumber($fileId);
+		// 			list($newFileId, $newRevision) = $submissionFileManager->copyFileToFileStage($fileId, $revisionNumber, SUBMISSION_FILE_REVIEW_FILE, null, true);
+		// 			$submissionFileDao->assignRevisionToReviewRound($newFileId, $newRevision, $reviewRound);
+		// 		}
+		// 	}
+		// }
 	}
 }
