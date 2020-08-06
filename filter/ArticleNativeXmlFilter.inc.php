@@ -182,6 +182,7 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 
 	function createFileNode($doc, $deployment, $submission, $submissionFile){
 		$fileNode= $doc->createElementNS($deployment->getNamespace(), 'file');
+		$fileNode->setAttribute("id", $submissionFile->getId());
 		$fileNode->setAttribute('number', $submissionFile->getRevision());
 		if ($sourceFileId = $submissionFile->getSourceFileId()) {
 			$fileNode->setAttribute('source', $sourceFileId . '-' . $submissionFile->getSourceRevision());

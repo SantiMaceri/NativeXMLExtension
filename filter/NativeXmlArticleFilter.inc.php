@@ -229,12 +229,23 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 
 
 	function parseRounds($rounds,$submission, $stageId){
+		$submissionFileDao = DAORegistry::getDAO('SubmissionFileDAO'); /* @var $submissionFileDao SubmissionFileDAO */
+
+		// Bring in the SUBMISSION_FILE_* constants.
+		import('lib.pkp.classes.submission.SubmissionFile');
+		$submissionFiles = $submissionFileDao->getBySubmissionId($submission->getId());
+		$reviewFiles = array_filter($submissionFiles, 
+									function($file){ 
+										return($file->getFileStage() == SUBMISSION_FILE_REVIEW_FILE);
+									}
+						);
 		foreach($rounds as $round){
-			$this->parseRound($round, $submission, $stageId);
+			$this->parseRound($round, $submission, $stageId, array_shift($reviewFiles));
 		}
 	}
 
-	function parseRound($round , $submission, $stageId){
+	function parseRound($round , $submission, $stageId, $reviewFile){
+		$submissionFileDao = DAORegistry::getDAO('SubmissionFileDAO'); /* @var $submissionFileDao SubmissionFileDAO */
 		// If we already have review round for this stage,
 		// we create a new round after the last one.
 		$reviewRoundDao = DAORegistry::getDAO('ReviewRoundDAO'); /* @var $reviewRoundDao ReviewRoundDAO */
@@ -245,28 +256,11 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 			// If we don't have any review round, we create the first one.
 			$newRound = 1;
 		}
-
 		// Create a new review round.
 		$reviewRound = $reviewRoundDao->build($submission->getId(), $stageId, $newRound, null);
+		$submissionFileDao->assignRevisionToReviewRound($reviewFile->getId(), $reviewFile->getRevision(), $reviewRound);
 
-		// Add the selected files to the new round.
-		$submissionFileDao = DAORegistry::getDAO('SubmissionFileDAO'); /* @var $submissionFileDao SubmissionFileDAO */
-
-		// Bring in the SUBMISSION_FILE_* constants.
-		import('lib.pkp.classes.submission.SubmissionFile');
-		// Bring in the Manager (we need it).
-		import('lib.pkp.classes.file.SubmissionFileManager');
-		$submissionFileManager = new SubmissionFileManager($submission->getContextId(), $submission->getId());
-		// foreach (array('selectedFiles', 'selectedAttachments') as $userVar) {
-		// 	$selectedFiles = $this->getData($userVar);
-		// 	if(is_array($selectedFiles)) {
-		// 		foreach ($selectedFiles as $fileId) {
-			// 			Retrieve the file last revision number.
-		// 			$revisionNumber = $submissionFileDao->getLatestRevisionNumber($fileId);
-		// 			list($newFileId, $newRevision) = $submissionFileManager->copyFileToFileStage($fileId, $revisionNumber, SUBMISSION_FILE_REVIEW_FILE, null, true);
-		// 			$submissionFileDao->assignRevisionToReviewRound($newFileId, $newRevision, $reviewRound);
-		// 		}
-		// 	}
-		// }
 	}
+
+	
 }

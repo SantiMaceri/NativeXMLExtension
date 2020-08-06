@@ -96,7 +96,7 @@
       <element ref="pkp:name"/> 
       <element ref="pkp:embed" />
     </sequence>
-
+    <attribute name="id" />
     <attribute name="number" />
     <attribute name="source" />
     <attribute name="genre" />
