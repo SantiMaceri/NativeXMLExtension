@@ -234,17 +234,26 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 		// Bring in the SUBMISSION_FILE_* constants.
 		import('lib.pkp.classes.submission.SubmissionFile');
 		$submissionFiles = $submissionFileDao->getBySubmissionId($submission->getId());
+
 		$reviewFiles = array_filter($submissionFiles, 
 									function($file){ 
 										return($file->getFileStage() == SUBMISSION_FILE_REVIEW_FILE);
 									}
 						);
+
+
+		$revisionFiles = array_filter($submissionFiles, 
+									function($file){ 
+										return($file->getFileStage() == SUBMISSION_FILE_REVIEW_REVISION);
+									}
+						);
+						
 		foreach($rounds as $round){
-			$this->parseRound($round, $submission, $stageId, array_shift($reviewFiles));
+			$this->parseRound($round, $submission, $stageId, array_shift($reviewFiles), array_shift($revisionFiles));
 		}
 	}
 
-	function parseRound($round , $submission, $stageId, $reviewFile){
+	function parseRound($round , $submission, $stageId, $reviewFile, $revisionFile){
 		$submissionFileDao = DAORegistry::getDAO('SubmissionFileDAO'); /* @var $submissionFileDao SubmissionFileDAO */
 		// If we already have review round for this stage,
 		// we create a new round after the last one.
@@ -258,7 +267,13 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 		}
 		// Create a new review round.
 		$reviewRound = $reviewRoundDao->build($submission->getId(), $stageId, $newRound, null);
-		$submissionFileDao->assignRevisionToReviewRound($reviewFile->getId(), $reviewFile->getRevision(), $reviewRound);
+		if($reviewFile){
+			$submissionFileDao->assignRevisionToReviewRound($reviewFile->getId(), $reviewFile->getRevision(), $reviewRound);
+		}
+		if($revisionFile){
+			$submissionFileDao->assignRevisionToReviewRound($revisionFile->getId(), $revisionFile->getRevision(), $reviewRound);
+		}
+
 
 	}
 
