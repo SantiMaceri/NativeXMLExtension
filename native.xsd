@@ -94,10 +94,12 @@
   <complexType>
     <sequence>
       <element ref="pkp:name"/> 
-      <element ref="pkp:embed" />
+      <element ref="pkp:embed" minOccurs="0"/>
     </sequence>
     <attribute name="id" />
     <attribute name="number" />
+    <attribute name="stage" />
+
     <attribute name="source" />
     <attribute name="genre" />
     <attribute name="filename" />

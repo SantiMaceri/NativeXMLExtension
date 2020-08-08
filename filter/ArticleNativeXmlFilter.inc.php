@@ -170,7 +170,6 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 
 		$roundNode = $doc->createElementNS($deployment->getNamespace(), 'round');
 		$files = $submissionFileDao->getRevisionsByReviewRound($round);
-
 		foreach($files as $submissionFile){
 			$roundNode->appendChild($this->createFileNode($doc,$deployment,$submission, $submissionFile));
 		}
@@ -184,6 +183,7 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 		$fileNode= $doc->createElementNS($deployment->getNamespace(), 'file');
 		$fileNode->setAttribute("id", $submissionFile->getId());
 		$fileNode->setAttribute('number', $submissionFile->getRevision());
+		$fileNode->setAttribute('stage', $submissionFile->getFileStage());
 		if ($sourceFileId = $submissionFile->getSourceFileId()) {
 			$fileNode->setAttribute('source', $sourceFileId . '-' . $submissionFile->getSourceRevision());
 		}
@@ -210,9 +210,9 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 
 		$this->createLocalizedNodes($doc, $fileNode, 'name', $submissionFile->getName(null));
 
-		$embedNode = $doc->createElementNS($deployment->getNamespace(), 'embed', base64_encode(file_get_contents($submissionFile->getFilePath())));
-		$embedNode->setAttribute('encoding', 'base64');
-		$fileNode->appendChild($embedNode);
+		// $embedNode = $doc->createElementNS($deployment->getNamespace(), 'embed', base64_encode(file_get_contents($submissionFile->getFilePath())));
+		// $embedNode->setAttribute('encoding', 'base64');
+		// $fileNode->appendChild($embedNode);
 		return $fileNode;
 	}
 
