@@ -251,9 +251,11 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 
 	function parseRound($round , $submission, $stageId, &$reviewFiles, &$revisionFiles){
 		$submissionFileDao = DAORegistry::getDAO('SubmissionFileDAO'); /* @var $submissionFileDao SubmissionFileDAO */
-		// If we already have review round for this stage,
-		// we create a new round after the last one.
 		$reviewRoundDao = DAORegistry::getDAO('ReviewRoundDAO'); /* @var $reviewRoundDao ReviewRoundDAO */
+		$reviewAssignmentDao = DAORegistry::getDAO('ReviewAssignmentDAO'); /* @var $reviewAssignmentDao ReviewAssignmentDAO */
+		$userDao = DAORegistry::getDAO('UserDAO');
+
+
 		$lastReviewRound = $reviewRoundDao->getLastReviewRoundBySubmissionId($submission->getId(), $stageId);
 		if ($lastReviewRound) {
 			$newRound = $lastReviewRound->getRound() + 1;
@@ -263,15 +265,15 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 		}
 		
 		// Create a new review round.
-		$reviewRound = $reviewRoundDao->build($submission->getId(), $stageId, $newRound, null);
-
+		$reviewRound = $reviewRoundDao->build($submission->getId(), $stageId, $newRound, null);		
+		
 		$files = $round->getElementsByTagName("file");
 
 		/* La obtencion de los files a traves del DAO viene en orden, por lo tanto,
 		   si los files de los rounds estan en orden yo puede determinar en que round esta cada file.
 		*/
 
-		foreach($files as $file){
+		foreach($files as $file){ //DEBERIA LLAMARSE FILENODE
 			
 			if($file->getAttribute("stage") == SUBMISSION_FILE_REVIEW_FILE){
 				if(count($reviewFiles) > 0){
@@ -286,6 +288,40 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 					$submissionFileDao->assignRevisionToReviewRound($revisionFile->getId(), $revisionFile->getRevision(), $reviewRound);
 				}
 			}
+		}
+
+		$reviewAssignments = $round->getElementsByTagName("reviewAssignment");
+		
+		foreach($reviewAssignments as $reviewAssignmentNode){
+			$reviewAssignment = $reviewAssignmentDao->newDataObject();
+			$reviewAssignment->setSubmissionId($submission->getId());
+			$reviewAssignment->setReviewerId($userDao->getUserByEmail($reviewAssignmentNode->getAttribute("reviewer"))->getId());
+			$reviewAssignment->setDateAssigned($reviewAssignmentNode->getAttribute("date_assigned"));
+			$reviewAssignment->setStageId($stageId);
+			$reviewAssignment->setRound($newRound);
+			$reviewAssignment->setReviewRoundId($reviewRound->getId());
+			$reviewAssignment->setReviewMethod($reviewAssignmentNode->getAttribute("method"));
+			$reviewAssignment->setUnconsidered($reviewAssignmentNode->getAttribute("unconsidered"));
+			$reviewAssignment->setDateRated($reviewAssignmentNode->getAttribute("date_rated"));
+			$reviewAssignment->setLastModified($reviewAssignmentNode->getAttribute("last_modified"));
+			$reviewAssignment->setDateAssigned($reviewAssignmentNode->getAttribute("date_assigned"));
+			$reviewAssignment->setDateNotified($reviewAssignmentNode->getAttribute("date_notified"));
+			$reviewAssignment->setDateConfirmed($reviewAssignmentNode->getAttribute("date_confirmed"));
+			$reviewAssignment->setDateCompleted($reviewAssignmentNode->getAttribute("date_completed"));
+			$reviewAssignment->setDateAcknowledged($reviewAssignmentNode->getAttribute("date_acknowledged"));
+			$reviewAssignment->setDateReminded($reviewAssignmentNode->getAttribute("date_reminded"));
+			$reviewAssignment->setDateDue($reviewAssignmentNode->getAttribute("date_due"));
+			$reviewAssignment->setDateResponseDue($reviewAssignmentNode->getAttribute("date_response_due"));
+			$reviewAssignment->setDeclined($reviewAssignmentNode->getAttribute("declined"));
+			$reviewAssignment->setCancelled($reviewAssignmentNode->getAttribute("cancelled"));
+			$reviewAssignment->setReminderWasAutomatic($reviewAssignmentNode->getAttribute("automatic"));
+			$reviewAssignment->setQuality(0); //No le gusta ""
+			$reviewAssignment->setReviewFormId($reviewAssignmentNode->getAttribute("form"));
+			//$reviewAssignment->setRecommendation($reviewAssignmentNode->getAttribute("recommendation"));
+			$reviewAssignment->setCompetingInterests($reviewAssignmentNode->getAttribute("competing_interest"));
+			
+			
+			$reviewAssignmentDao->insertObject($reviewAssignment);
 		}
 
 	}
