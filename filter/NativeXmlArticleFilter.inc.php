@@ -266,6 +266,11 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 		$reviewRound = $reviewRoundDao->build($submission->getId(), $stageId, $newRound, null);
 
 		$files = $round->getElementsByTagName("file");
+
+		/* La obtencion de los files a traves del DAO viene en orden, por lo tanto,
+		   si los files de los rounds estan en orden yo puede determinar en que round esta cada file.
+		*/
+
 		foreach($files as $file){
 			
 			if($file->getAttribute("stage") == SUBMISSION_FILE_REVIEW_FILE){

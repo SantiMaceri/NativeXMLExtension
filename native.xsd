@@ -84,6 +84,7 @@
 <element name="round"> 
   <complexType>
     <sequence>
+      <element ref="pkp:reviewAssignment" minOccurs="0" maxOccurs="unbounded" />
       <element ref="pkp:file" minOccurs="0" maxOccurs="unbounded" />
     </sequence>
   </complexType>
@@ -99,7 +100,6 @@
     <attribute name="id" />
     <attribute name="number" />
     <attribute name="stage" />
-
     <attribute name="source" />
     <attribute name="genre" />
     <attribute name="filename" />
@@ -109,8 +109,6 @@
     <attribute name="filesize" />
     <attribute name="filetype" />
     <attribute name="uploader" />
-
-    
   </complexType>
 </element>
 
@@ -124,6 +122,37 @@
 <element name="embed">
   <complexType mixed="true">
     <attribute name="encoding" />
+  </complexType>
+</element>
+
+
+
+
+<element name="reviewAssignment">
+  <complexType>
+    <attribute name="reviewer" />
+    <attribute name="method" />
+    <attribute name="round" />
+    <attribute name="unconsidered" />
+    <attribute name="date_rated" />
+    <attribute name="last_modified" />
+    <attribute name="date_assigned" />
+    <attribute name="date_notified" />
+    <attribute name="date_confirmed" />
+    <attribute name="date_completed" />
+    <attribute name="date_acknowledged" />
+    <attribute name="date_reminded" />
+    <attribute name="date_due" />
+    <attribute name="date_response_due" />
+    <attribute name="declined" />
+    <attribute name="cancelled" />
+    <attribute name="automatic" />
+    <attribute name="quality" />
+    <attribute name="form" />
+    <attribute name="recommendation" />
+    <attribute name="competing_interest" />
+
+
   </complexType>
 </element>
 

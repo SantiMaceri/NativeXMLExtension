@@ -152,6 +152,7 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 
 	function createRoundsNode($doc, $deployment, $submission){
 		$reviewRoundDao = DAORegistry::getDAO('ReviewRoundDAO');
+
 		$roundsNode = $doc->createElementNS($deployment->getNamespace(), 'rounds');
 
 		$rounds = $reviewRoundDao->getBySubmissionId($submission->getId(), WORKFLOW_STAGE_ID_EXTERNAL_REVIEW)->toArray();
@@ -167,16 +168,59 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 
 	function createRoundNode($doc, $deployment, $submission, $round){
 		$submissionFileDao = DAORegistry::getDAO('SubmissionFileDAO');
-
+		$reviewAssignmentDao = DAORegistry::getDAO('ReviewAssignmentDAO'); /* @var $reviewAssignmentDao ReviewAssignmentDAO */
 		$roundNode = $doc->createElementNS($deployment->getNamespace(), 'round');
+		
+		$reviewAssignments = $reviewAssignmentDao->getByReviewRoundId($round->getId());
+		foreach($reviewAssignments as $reviewAssignment){
+			$roundNode->appendChild($this->createReviewAssignmentNode($doc, $deployment, $submission, $reviewAssignment));
+		}
+
 		$files = $submissionFileDao->getRevisionsByReviewRound($round);
 		foreach($files as $submissionFile){
 			$roundNode->appendChild($this->createFileNode($doc,$deployment,$submission, $submissionFile));
 		}
-		
-		
-		
+			
 		return $roundNode;
+	}
+
+	function createReviewAssignmentNode($doc, $deployment, $submission, $reviewAssignment){
+		$userDao = DAORegistry::getDAO('UserDAO');
+		$reviewFormDao = DAORegistry::getDAO('ReviewFormDAO');
+
+
+		$reviewAssignmentNode= $doc->createElementNS($deployment->getNamespace(), 'reviewAssignment');
+		$reviewAssignmentNode->setAttribute("reviewer", $userDao->getById($reviewAssignment->getReviewerId())->getEmail() );
+		$reviewAssignmentNode->setAttribute("method", $reviewAssignment->getReviewMethod());
+		$reviewAssignmentNode->setAttribute("round", $reviewAssignment->getRound());
+		$reviewAssignmentNode->setAttribute("unconsidered", $reviewAssignment->getUnconsidered());
+		$reviewAssignmentNode->setAttribute("date_rated", strftime('%Y-%m-%d', strtotime($reviewAssignment->getDateRated())));
+		$reviewAssignmentNode->setAttribute("last_modified", strftime('%Y-%m-%d', strtotime($reviewAssignment->getLastModified())));
+		$reviewAssignmentNode->setAttribute("date_assigned", strftime('%Y-%m-%d', strtotime($reviewAssignment->getDateAssigned())));
+		$reviewAssignmentNode->setAttribute("date_notified", strftime('%Y-%m-%d', strtotime($reviewAssignment->getDateNotified())));
+		$reviewAssignmentNode->setAttribute("date_confirmed", strftime('%Y-%m-%d', strtotime($reviewAssignment->getDateConfirmed())));
+		$reviewAssignmentNode->setAttribute("date_completed", strftime('%Y-%m-%d', strtotime($reviewAssignment->getDateCompleted())));
+		$reviewAssignmentNode->setAttribute("date_acknowledged", strftime('%Y-%m-%d', strtotime($reviewAssignment->getDateAcknowledged())));
+		$reviewAssignmentNode->setAttribute("date_reminded", strftime('%Y-%m-%d', strtotime($reviewAssignment->getDateReminded())));
+		$reviewAssignmentNode->setAttribute("date_due", strftime('%Y-%m-%d', strtotime($reviewAssignment->getDateDue())));
+		$reviewAssignmentNode->setAttribute("date_response_due", strftime('%Y-%m-%d', strtotime($reviewAssignment->getDateResponseDue())));
+		$reviewAssignmentNode->setAttribute("declined", $reviewAssignment->getDeclined());
+		$reviewAssignmentNode->setAttribute("cancelled", $reviewAssignment->getCancelled());
+		$reviewAssignmentNode->setAttribute("automatic", $reviewAssignment->getReminderWasAutomatic());
+		$reviewAssignmentNode->setAttribute("quality", $reviewAssignment->getQuality());
+		$reviewAssignmentNode->setAttribute("form", $reviewAssignment->getReviewFormId()); //SEGURAMENTE CAMBIAR
+		$reviewAssignmentNode->setAttribute("recommendation", $reviewAssignment->getRecommendation()); 
+		$reviewAssignmentNode->setAttribute("competing_interest", $reviewAssignment->getCompetingInterests()); 
+
+
+
+
+
+
+		//exit(json_encode($reviewAssignment->getComments()));
+
+		return $reviewAssignmentNode;
+
 	}
 
 	function createFileNode($doc, $deployment, $submission, $submissionFile){
