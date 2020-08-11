@@ -304,18 +304,35 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 			$reviewAssignment->setUnconsidered($reviewAssignmentNode->getAttribute("unconsidered"));
 			$reviewAssignment->setDateRated($reviewAssignmentNode->getAttribute("date_rated"));
 			$reviewAssignment->setLastModified($reviewAssignmentNode->getAttribute("last_modified"));
-			$reviewAssignment->setDateAssigned($reviewAssignmentNode->getAttribute("date_assigned"));
-			$reviewAssignment->setDateNotified($reviewAssignmentNode->getAttribute("date_notified"));
-			$reviewAssignment->setDateConfirmed($reviewAssignmentNode->getAttribute("date_confirmed"));
-			$reviewAssignment->setDateCompleted($reviewAssignmentNode->getAttribute("date_completed"));
-			$reviewAssignment->setDateAcknowledged($reviewAssignmentNode->getAttribute("date_acknowledged"));
-			$reviewAssignment->setDateReminded($reviewAssignmentNode->getAttribute("date_reminded"));
+			if($reviewAssignmentNode->getAttribute("date_assigned") != "1970-01-01 00:00"){
+				$reviewAssignment->setDateAssigned($reviewAssignmentNode->getAttribute("date_assigned"));
+			}
+			if($reviewAssignmentNode->getAttribute("date_notified") != "1970-01-01 00:00"){
+				$reviewAssignment->setDateNotified($reviewAssignmentNode->getAttribute("date_notified"));
+			}
+			if($reviewAssignmentNode->getAttribute("date_confirmed") != "1970-01-01 00:00"){
+				$reviewAssignment->setDateConfirmed($reviewAssignmentNode->getAttribute("date_confirmed"));
+			}
+			if($reviewAssignmentNode->getAttribute("date_completed") != "1970-01-01 00:00"){
+				$reviewAssignment->setDateCompleted($reviewAssignmentNode->getAttribute("date_completed"));
+			}
+			if($reviewAssignmentNode->getAttribute("date_acknowledged") != "1970-01-01 00:00"){
+				$reviewAssignment->setDateAcknowledged($reviewAssignmentNode->getAttribute("date_acknowledged"));
+			}
+			if($reviewAssignmentNode->getAttribute("date_reminded") != "1970-01-01 00:00"){
+				$reviewAssignment->setDateReminded($reviewAssignmentNode->getAttribute("date_reminded"));
+			}
 			$reviewAssignment->setDateDue($reviewAssignmentNode->getAttribute("date_due"));
 			$reviewAssignment->setDateResponseDue($reviewAssignmentNode->getAttribute("date_response_due"));
 			$reviewAssignment->setDeclined($reviewAssignmentNode->getAttribute("declined"));
 			$reviewAssignment->setCancelled($reviewAssignmentNode->getAttribute("cancelled"));
 			$reviewAssignment->setReminderWasAutomatic($reviewAssignmentNode->getAttribute("automatic"));
-			$reviewAssignment->setQuality(0); //No le gusta ""
+			if($reviewAssignmentNode->getAttribute("quality") != ""){
+				$reviewAssignment->setQuality($reviewAssignmentNode->getAttribute("quality")); //No le gusta ""
+			}
+			else{
+				$reviewAssignment->setQuality(0); 
+			}
 			$reviewAssignment->setReviewFormId($reviewAssignmentNode->getAttribute("form"));
 			//$reviewAssignment->setRecommendation($reviewAssignmentNode->getAttribute("recommendation"));
 			$reviewAssignment->setCompetingInterests($reviewAssignmentNode->getAttribute("competing_interest"));
