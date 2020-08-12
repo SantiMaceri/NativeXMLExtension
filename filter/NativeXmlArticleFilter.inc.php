@@ -328,13 +328,16 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 			$reviewAssignment->setCancelled($reviewAssignmentNode->getAttribute("cancelled"));
 			$reviewAssignment->setReminderWasAutomatic($reviewAssignmentNode->getAttribute("automatic"));
 			if($reviewAssignmentNode->getAttribute("quality") != ""){
-				$reviewAssignment->setQuality($reviewAssignmentNode->getAttribute("quality")); //No le gusta ""
+				$reviewAssignment->setQuality($reviewAssignmentNode->getAttribute("quality")); 
 			}
 			else{
 				$reviewAssignment->setQuality(0); 
 			}
 			$reviewAssignment->setReviewFormId($reviewAssignmentNode->getAttribute("form"));
-			//$reviewAssignment->setRecommendation($reviewAssignmentNode->getAttribute("recommendation"));
+			
+			if($reviewAssignmentNode->getAttribute("recommendation") != ""){
+				$reviewAssignment->setRecommendation($reviewAssignmentNode->getAttribute("recommendation"));
+			}
 			$reviewAssignment->setCompetingInterests($reviewAssignmentNode->getAttribute("competing_interest"));
 			
 			

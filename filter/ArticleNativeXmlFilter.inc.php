@@ -214,10 +214,17 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 
 
 
+		//POsible forma de obtener el form, esta tirando error porque no hay ninguno definido.
+		$reviewForm = $reviewFormDao->getById($reviewAssignment->getReviewFormId(), Application::getContextAssocType(), $deployment->getContext()->getId());
 
 
+		//Asi se obtienen los comments de las reviewAssigments, puede que haya que crear otro nodo comment
+		// $submissionCommentDao = DAORegistry::getDAO('SubmissionCommentDAO'); /* @var $submissionCommentDao SubmissionCommentDAO */
+		// $c = $submissionCommentDao->getReviewerCommentsByReviewerId($reviewAssignment->getSubmissionId(), null, $reviewAssignment->getId(), true);
+		// $d = $submissionCommentDao->getReviewerCommentsByReviewerId($reviewAssignment->getSubmissionId(), null, $reviewAssignment->getId(), false);
 
-		//exit(json_encode($reviewAssignment->getComments()));
+
+		
 
 		return $reviewAssignmentNode;
 
