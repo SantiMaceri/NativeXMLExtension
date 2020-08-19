@@ -254,6 +254,12 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 		$reviewRoundDao = DAORegistry::getDAO('ReviewRoundDAO'); /* @var $reviewRoundDao ReviewRoundDAO */
 		$reviewAssignmentDao = DAORegistry::getDAO('ReviewAssignmentDAO'); /* @var $reviewAssignmentDao ReviewAssignmentDAO */
 		$userDao = DAORegistry::getDAO('UserDAO');
+		$reviewFormDao = DAORegistry::getDAO('ReviewFormDAO');
+		$submissionCommentDao = DAORegistry::getDAO('SubmissionCommentDAO'); /* @var $submissionCommentDao SubmissionCommentDAO */
+
+
+		$context = $this->getDeployment()->getContext();
+
 
 
 		$lastReviewRound = $reviewRoundDao->getLastReviewRoundBySubmissionId($submission->getId(), $stageId);
@@ -333,7 +339,7 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 			else{
 				$reviewAssignment->setQuality(0); 
 			}
-			$reviewAssignment->setReviewFormId($reviewAssignmentNode->getAttribute("form"));
+			
 			
 			if($reviewAssignmentNode->getAttribute("recommendation") != ""){
 				$reviewAssignment->setRecommendation($reviewAssignmentNode->getAttribute("recommendation"));
@@ -342,6 +348,49 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 			
 			
 			$reviewAssignmentDao->insertObject($reviewAssignment);
+
+			$formNode = $reviewAssignmentNode->getElementsByTagName("form")[0];
+			$reviewForms = $reviewFormDao->getByAssocId(Application::getContextAssocType(), $context->getId())->toArray();
+
+			$selectedForm = array_filter($reviewForms, 
+										function($form) use($formNode){ 
+											return($form->getLocalizedTitle() == $formNode->getAttribute("title") );
+										}
+							);
+
+			//exit(json_encode($selectedForm));
+			if($formNode->getAttribute("title") == "default"){
+				$reviewAssignment->setReviewFormId(0);
+				
+			$answers = $formNode->getElementsByTagName("answer");
+			foreach($answers as $answersNode){
+				$comment = $submissionCommentDao->newDataObject();
+				$comment->setCommentType(COMMENT_TYPE_PEER_REVIEW);
+				$comment->setRoleId(ROLE_ID_REVIEWER);
+				$comment->setAssocId($reviewAssignment->getId());
+				$comment->setSubmissionId($reviewAssignment->getSubmissionId());
+				$comment->setAuthorId($userDao->getUserByEmail($reviewAssignmentNode->getAttribute("reviewer"))->getId());
+				$comment->setComments($answersNode->getAttribute("value"));
+				$comment->setCommentTitle('');
+				if($answersNode->getAttribute("viewable") == "true"){
+					$comment->setViewable(true);
+				}
+				else{
+					$comment->setViewable(false);
+				}
+				
+				$comment->setDatePosted(Core::getCurrentDate());
+				$submissionCommentDao->insertObject($comment);
+
+			}
+				
+
+			}else{
+				//exit($formNode->getElementsByTagName("answer")[0]->getAttribute("value"));
+				$reviewAssignment->setReviewFormId($selectedForm[1]->getId());
+
+			}
+
 		}
 
 	}

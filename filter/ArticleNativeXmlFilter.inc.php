@@ -186,7 +186,7 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 
 	function createReviewAssignmentNode($doc, $deployment, $submission, $reviewAssignment){
 		$userDao = DAORegistry::getDAO('UserDAO');
-		$reviewFormDao = DAORegistry::getDAO('ReviewFormDAO');
+		
 
 
 		$reviewAssignmentNode= $doc->createElementNS($deployment->getNamespace(), 'reviewAssignment');
@@ -208,15 +208,15 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 		$reviewAssignmentNode->setAttribute("cancelled", $reviewAssignment->getCancelled());
 		$reviewAssignmentNode->setAttribute("automatic", $reviewAssignment->getReminderWasAutomatic());
 		$reviewAssignmentNode->setAttribute("quality", $reviewAssignment->getQuality());
-		$reviewAssignmentNode->setAttribute("form", $reviewAssignment->getReviewFormId()); //SEGURAMENTE CAMBIAR
 		$reviewAssignmentNode->setAttribute("recommendation", $reviewAssignment->getRecommendation()); 
 		$reviewAssignmentNode->setAttribute("competing_interest", $reviewAssignment->getCompetingInterests()); 
 
 
+		$reviewAssignmentNode->appendChild($this->createFormNode($doc, $deployment, $submission, $reviewAssignment));
 
-		//POsible forma de obtener el form, esta tirando error porque no hay ninguno definido.
-		$reviewForm = $reviewFormDao->getById($reviewAssignment->getReviewFormId(), Application::getContextAssocType(), $deployment->getContext()->getId());
 
+
+		
 
 		//Asi se obtienen los comments de las reviewAssigments, puede que haya que crear otro nodo comment
 		// $submissionCommentDao = DAORegistry::getDAO('SubmissionCommentDAO'); /* @var $submissionCommentDao SubmissionCommentDAO */
@@ -227,6 +227,51 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 		
 
 		return $reviewAssignmentNode;
+
+	}
+
+
+	function createFormNode($doc, $deployment, $submission, $reviewAssignment){
+		$reviewFormDao = DAORegistry::getDAO('ReviewFormDAO');
+		$reviewFormElementDao = DAORegistry::getDAO('ReviewFormElementDAO');
+		$reviewFormResponseDao = DAORegistry::getDAO('ReviewFormResponseDAO');
+		$submissionCommentDao = DAORegistry::getDAO('SubmissionCommentDAO'); /* @var $submissionCommentDao SubmissionCommentDAO */
+
+
+		//POsible forma de obtener el form, esta tirando error porque no hay ninguno definido, creo....
+		$reviewForm = $reviewFormDao->getById($reviewAssignment->getReviewFormId(), Application::getContextAssocType(), $deployment->getContext()->getId());
+		$formNode= $doc->createElementNS($deployment->getNamespace(), 'form');
+		
+		if($reviewAssignment->getReviewFormId() == 0){
+			$formNode->setAttribute("title", "default");
+
+			$both = $submissionCommentDao->getReviewerCommentsByReviewerId($reviewAssignment->getSubmissionId(), null, $reviewAssignment->getId(), true);
+			$editorOnly = $submissionCommentDao->getReviewerCommentsByReviewerId($reviewAssignment->getSubmissionId(), null, $reviewAssignment->getId(), false);
+			$answerNode = $doc->createElementNS($deployment->getNamespace(), 'answer');	
+			$answerNode->setAttribute("value", $both->toArray()[0]->getComments());
+			$answerNode->setAttribute("viewable", "true");
+			$formNode->appendChild($answerNode);
+			$answerNode = $doc->createElementNS($deployment->getNamespace(), 'answer');	
+			$answerNode->setAttribute("value", $editorOnly->toArray()[0]->getComments());
+			$answerNode->setAttribute("viewable", "false");
+			$formNode->appendChild($answerNode);
+
+		}
+		else{
+			
+			$formNode->setAttribute("title", $reviewForm->getLocalizedTitle());
+
+			$reviewFormElements = $reviewFormElementDao->getByReviewFormId($reviewForm->getId())->toArray();
+			$answers = $reviewFormResponseDao->getReviewReviewFormResponseValues($reviewAssignment->getId());
+			foreach($answers as $answer){
+				$answerNode = $doc->createElementNS($deployment->getNamespace(), 'answer');	
+				$answerNode->setAttribute("value", json_encode($answer)); //Lo dejo codificado por los checkboxes, que se representan en array
+				$formNode->appendChild($answerNode);
+			}
+		}
+	
+
+		return $formNode;
 
 	}
 

@@ -130,6 +130,9 @@
 
 <element name="reviewAssignment">
   <complexType>
+    <sequence>
+      <element ref="pkp:form" minOccurs="1" />
+    </sequence>
     <attribute name="reviewer" />
     <attribute name="method" />
     <attribute name="round" />
@@ -148,7 +151,7 @@
     <attribute name="cancelled" />
     <attribute name="automatic" />
     <attribute name="quality" />
-    <attribute name="form" />
+    <!-- <attribute name="form" /> -->
     <attribute name="recommendation" />
     <attribute name="competing_interest" />
 
@@ -156,7 +159,23 @@
   </complexType>
 </element>
 
+<!-- Form -->
 
+<element name="form">
+  <complexType>
+    <sequence>
+      <element ref="pkp:answer" minOccurs="0" maxOccurs="unbounded" />
+    </sequence>
+    <attribute name="title" />
+  </complexType>
+</element>
+
+<element name="answer">
+  <complexType>
+    <attribute name="value" />
+    <attribute name="viewable" />
+  </complexType>
+</element>
 
 <!-- Queries -->
 
