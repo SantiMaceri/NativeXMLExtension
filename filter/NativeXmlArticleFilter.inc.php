@@ -255,8 +255,9 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 		$reviewAssignmentDao = DAORegistry::getDAO('ReviewAssignmentDAO'); /* @var $reviewAssignmentDao ReviewAssignmentDAO */
 		$userDao = DAORegistry::getDAO('UserDAO');
 		$reviewFormDao = DAORegistry::getDAO('ReviewFormDAO');
-		$submissionCommentDao = DAORegistry::getDAO('SubmissionCommentDAO'); /* @var $submissionCommentDao SubmissionCommentDAO */
-
+		$submissionCommentDao = DAORegistry::getDAO('SubmissionCommentDAO'); 
+		$reviewFormResponseDao = DAORegistry::getDAO('ReviewFormResponseDAO'); 
+		$reviewFormElementDao = DAORegistry::getDAO('ReviewFormElementDAO'); 
 
 		$context = $this->getDeployment()->getContext();
 
@@ -352,42 +353,72 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 			$formNode = $reviewAssignmentNode->getElementsByTagName("form")[0];
 			$reviewForms = $reviewFormDao->getByAssocId(Application::getContextAssocType(), $context->getId())->toArray();
 
-			$selectedForm = array_filter($reviewForms, 
+			$answers = $formNode->getElementsByTagName("answer");
+
+
+			//exit(json_encode($selectedForm));
+			if($formNode->getAttribute("title") == "default"){ //Es el formulario por default con comentarios
+				$reviewAssignment->setReviewFormId(0);
+				foreach($answers as $answersNode){
+					$comment = $submissionCommentDao->newDataObject();
+					$comment->setCommentType(COMMENT_TYPE_PEER_REVIEW);
+					$comment->setRoleId(ROLE_ID_REVIEWER);
+					$comment->setAssocId($reviewAssignment->getId());
+					$comment->setSubmissionId($reviewAssignment->getSubmissionId());
+					$comment->setAuthorId($userDao->getUserByEmail($reviewAssignmentNode->getAttribute("reviewer"))->getId());
+					$comment->setComments($answersNode->getAttribute("value"));
+					$comment->setCommentTitle('');
+					if($answersNode->getAttribute("viewable") == "true"){
+						$comment->setViewable(true);
+					}
+					else{
+						$comment->setViewable(false);
+					}
+					
+					$comment->setDatePosted(Core::getCurrentDate());
+					$submissionCommentDao->insertObject($comment);
+
+				}
+				
+
+			}else{ //Es un formulario 
+				$selectedForm = array_filter($reviewForms, 
 										function($form) use($formNode){ 
 											return($form->getLocalizedTitle() == $formNode->getAttribute("title") );
 										}
 							);
-
-			//exit(json_encode($selectedForm));
-			if($formNode->getAttribute("title") == "default"){
-				$reviewAssignment->setReviewFormId(0);
-				
-			$answers = $formNode->getElementsByTagName("answer");
-			foreach($answers as $answersNode){
-				$comment = $submissionCommentDao->newDataObject();
-				$comment->setCommentType(COMMENT_TYPE_PEER_REVIEW);
-				$comment->setRoleId(ROLE_ID_REVIEWER);
-				$comment->setAssocId($reviewAssignment->getId());
-				$comment->setSubmissionId($reviewAssignment->getSubmissionId());
-				$comment->setAuthorId($userDao->getUserByEmail($reviewAssignmentNode->getAttribute("reviewer"))->getId());
-				$comment->setComments($answersNode->getAttribute("value"));
-				$comment->setCommentTitle('');
-				if($answersNode->getAttribute("viewable") == "true"){
-					$comment->setViewable(true);
-				}
-				else{
-					$comment->setViewable(false);
-				}
-				
-				$comment->setDatePosted(Core::getCurrentDate());
-				$submissionCommentDao->insertObject($comment);
-
-			}
-				
-
-			}else{
-				//exit($formNode->getElementsByTagName("answer")[0]->getAttribute("value"));
 				$reviewAssignment->setReviewFormId($selectedForm[1]->getId());
+				$reviewFormElements = $reviewFormElementDao->getByReviewFormId($selectedForm[1]->getId())->toArray();
+
+				foreach($answers as $answersNode){
+					$reviewFormResponse = $reviewFormResponseDao->newDataObject();
+					$reviewFormElement = array_shift($reviewFormElements);
+					$elementType = $reviewFormElement->getElementType();
+					switch ($elementType) {
+						case REVIEW_FORM_ELEMENT_TYPE_SMALL_TEXT_FIELD:
+						case REVIEW_FORM_ELEMENT_TYPE_TEXT_FIELD:
+						case REVIEW_FORM_ELEMENT_TYPE_TEXTAREA:
+							$reviewFormResponse->setResponseType('string');
+							$reviewFormResponse->setValue($answersNode->getAttribute("value"));
+						break;
+						case REVIEW_FORM_ELEMENT_TYPE_RADIO_BUTTONS:
+						case REVIEW_FORM_ELEMENT_TYPE_DROP_DOWN_BOX:
+							$reviewFormResponse->setResponseType('int');
+							$reviewFormResponse->setValue($answersNode->getAttribute("value"));
+						break;
+						case REVIEW_FORM_ELEMENT_TYPE_CHECKBOXES:
+							$reviewFormResponse->setResponseType('object');
+							$reviewFormResponse->setValue($answersNode->getAttribute("value"));
+						break;
+					}
+					$reviewFormResponse->setReviewFormElementId($reviewFormElement->getId());
+					$reviewFormResponse->setReviewId($reviewAssignment->getId());
+					$reviewFormResponseDao->insertObject($reviewFormResponse);
+				}
+
+				$reviewAssignmentDao->updateObject($reviewAssignment);
+
+
 
 			}
 
