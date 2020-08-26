@@ -265,7 +265,7 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 			$answers = $reviewFormResponseDao->getReviewReviewFormResponseValues($reviewAssignment->getId());
 			foreach($answers as $answer){
 				$answerNode = $doc->createElementNS($deployment->getNamespace(), 'answer');	
-				$answerNode->setAttribute("value", json_encode($answer)); //Lo dejo codificado por los checkboxes, que se representan en array
+				$answerNode->setAttribute("value", json_encode($answer, JSON_FORCE_OBJECT)); //Lo dejo codificado por los checkboxes, que se representan en array
 				$formNode->appendChild($answerNode);
 			}
 		}

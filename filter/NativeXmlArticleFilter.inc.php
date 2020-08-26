@@ -408,7 +408,7 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 						break;
 						case REVIEW_FORM_ELEMENT_TYPE_CHECKBOXES:
 							$reviewFormResponse->setResponseType('object');
-							$reviewFormResponse->setValue($answersNode->getAttribute("value"));
+							$reviewFormResponse->setValue(json_decode($answersNode->getAttribute("value"),true));
 						break;
 					}
 					$reviewFormResponse->setReviewFormElementId($reviewFormElement->getId());
