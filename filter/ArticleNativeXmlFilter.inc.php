@@ -262,11 +262,22 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 			$formNode->setAttribute("title", $reviewForm->getLocalizedTitle());
 
 			$reviewFormElements = $reviewFormElementDao->getByReviewFormId($reviewForm->getId())->toArray();
-			$answers = $reviewFormResponseDao->getReviewReviewFormResponseValues($reviewAssignment->getId());
-			foreach($answers as $answer){
+			// exit(json_encode($reviewFormElements));
+
+			foreach($reviewFormElements as $reviewFormElement){
 				$answerNode = $doc->createElementNS($deployment->getNamespace(), 'answer');	
-				$answerNode->setAttribute("value", json_encode($answer, JSON_FORCE_OBJECT)); //Lo dejo codificado por los checkboxes, que se representan en array
+				$answerNode->setAttribute("value", ""); //Lo dejo codificado por los checkboxes, que se representan en array
 				$formNode->appendChild($answerNode);
+			}
+			$answers = $reviewFormResponseDao->getReviewReviewFormResponseValues($reviewAssignment->getId());
+
+
+			//ROMPE SI LAS OPCIONALES NO SE RESPONDEN
+			foreach($answers as $key => $value){
+				$formNode->getElementsByTagName("answer")[$key-2]->setAttribute("value", json_encode($value, JSON_FORCE_OBJECT));
+				// $answerNode = $doc->createElementNS($deployment->getNamespace(), 'answer');	
+				// $answerNode->setAttribute("value", json_encode($answer, JSON_FORCE_OBJECT)); //Lo dejo codificado por los checkboxes, que se representan en array
+				// $formNode->appendChild($answerNode);
 			}
 		}
 	
